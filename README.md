@@ -1,85 +1,86 @@
 # The Grid
 
-Versión funcional inicial de **The Grid**: red social + hub de creadores + módulos Pulse, Grid Studio, Gaming y Wallet.
+MVP funcional de **The Grid**: red social + hub de creadores con módulos Pulse, Grid Studio, Gaming y Wallet.
 
-## Preview pública
+## Estructura
 
-La preview pública se despliega automáticamente desde GitHub Pages después de cada cambio en `main`:
+```text
+.
+├── app/
+│   ├── api/health/route.ts   # Health check
+│   ├── globals.css            # Sistema visual responsive
+│   ├── layout.tsx             # Layout y metadata global
+│   └── page.tsx               # Shell principal de la aplicación
+├── .github/workflows/ci.yml   # Typecheck + build
+├── next.config.ts             # Configuración Next.js en TypeScript
+├── package.json               # Dependencias y scripts PNPM
+├── tsconfig.json              # Configuración estricta TypeScript
+├── vercel.json                # Configuración de despliegue
+└── .npmrc                     # Política PNPM del proyecto
+```
 
-**https://bartoloiusepe-lgtm.github.io/Primer-repositorio-de-prueba/**
+La aplicación mantiene una estructura **Next.js App Router simple y coherente** mientras el producto sigue en etapa MVP. Cuando se incorporen dominios/backend independientes, la migración a un workspace monorepo se hará de forma explícita, sin mantener carpetas o configuraciones vacías como decoración.
 
-Esta preview permite revisar la interfaz desde iPhone, iPad, PC o cualquier dispositivo con Internet, sin depender del ordenador de casa.
-
-## Levantar The Grid en localhost
+## Desarrollo local
 
 Requiere **Node.js 20+** y **PNPM 10.15.1**.
 
-### 1. Clonar
-
-```bash
-git clone https://github.com/bartoloiusepe-lgtm/Primer-repositorio-de-prueba.git
-auto_cd="Primer-repositorio-de-prueba"
-cd "$auto_cd"
-```
-
-### 2. Activar PNPM
+### Instalar
 
 ```bash
 corepack enable
 corepack prepare pnpm@10.15.1 --activate
-pnpm --version
+git clone https://github.com/bartoloiusepe-lgtm/Primer-repositorio-de-prueba.git
+cd Primer-repositorio-de-prueba
+pnpm install
 ```
 
-Debe mostrar `10.15.1`.
+### Ejecutar
 
-### 3. Instalar y levantar en el ordenador
+HTTPS local:
 
 ```bash
-pnpm install
 pnpm dev
 ```
 
-El servidor de desarrollo usa HTTPS experimental de Next.js en el **puerto 3000**.
+Abrir `https://localhost:3000`.
 
-Abrir en el mismo ordenador:
+HTTP local:
 
-`https://localhost:3000`
+```bash
+pnpm dev:http
+```
 
-Si el navegador muestra una advertencia de certificado durante desarrollo local, es normal para el certificado generado por el servidor de desarrollo. No usar este certificado para producción.
-
-### 4. Probar desde iPhone/iPad u otro equipo de la misma Wi-Fi
-
-`localhost` desde el teléfono **no apunta al ordenador**. Para acceder desde otro dispositivo hay que arrancar el servidor escuchando en la red local:
+Para probar desde iPhone/iPad en la misma Wi-Fi:
 
 ```bash
 pnpm dev:lan
 ```
 
-Después, desde el teléfono abre:
-
-`http://IP-LOCAL-DEL-ORDENADOR:3000`
-
-El teléfono y el ordenador deben estar en la misma Wi-Fi. Si sigue apareciendo `ERR_CONNECTION_FAILED`, revisa que el firewall del ordenador permita conexiones entrantes al puerto TCP **3000**.
+Después abrir `http://IP-LOCAL-DEL-ORDENADOR:3000` desde el dispositivo.
 
 ## Scripts
 
 ```text
-pnpm dev       # HTTPS local en :3000
-pnpm dev:http  # HTTP local en localhost:3000
-pnpm dev:lan   # HTTP en 0.0.0.0:3000 para otros dispositivos de la LAN
-pnpm build     # build de producción
-pnpm start     # servidor de producción en :3000
+pnpm dev       # Next.js con HTTPS experimental en :3000
+pnpm dev:http  # HTTP local en :3000
+pnpm dev:lan   # HTTP en 0.0.0.0:3000 para la LAN
+pnpm typecheck  # TypeScript sin emitir archivos
+pnpm build      # Build de producción
+pnpm check      # Typecheck + build
+pnpm start      # Servidor Next.js de producción en :3000
 ```
 
-## Incluye
+## Calidad y CI
 
-- Feed social funcional en cliente.
-- Crear publicaciones sin recargar.
-- Navegación entre Inicio, Pulse, Grid Studio, Gaming y Wallet.
-- UI responsive para escritorio y móvil.
-- Endpoint `GET /api/health` en el modo servidor.
-- Configuración PNPM.
-- Preview pública mediante GitHub Pages.
-- Preparación para despliegue en Vercel.
+Cada push a `main` y cada pull request contra `main` ejecuta `.github/workflows/ci.yml`, que instala con PNPM, ejecuta TypeScript y construye la aplicación con Next.js.
 
-Esta versión es un **MVP funcional**, no todavía el sistema distribuido de producción. Las integraciones reales de autenticación, base de datos, streaming, gaming, pagos y realtime se incorporarán por etapas y cada cambio quedará versionado en GitHub.
+El repositorio no utiliza JavaScript paralelo para la aplicación: la lógica y configuración ejecutable del proyecto están en **TypeScript/TSX**.
+
+## Despliegue
+
+`vercel.json` define Next.js como framework y utiliza los scripts PNPM del proyecto. El despliegue debe apuntar directamente a la raíz del repositorio; no existe un preview HTML alternativo que duplique la aplicación.
+
+## Estado
+
+Esta versión es un **MVP funcional**, no todavía el sistema distribuido de producción descrito en la arquitectura objetivo. Las integraciones reales de autenticación, base de datos, streaming, gaming, pagos y realtime se incorporarán por etapas y cada cambio quedará versionado en GitHub.
