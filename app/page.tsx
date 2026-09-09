@@ -1,191 +1,126 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
-type Post = {
-  id: number
-  name: string
-  handle: string
-  text: string
-  time: string
-  likes: number
-  comments: number
-  liked?: boolean
-  verified?: boolean
+type IconName = 'home' | 'search' | 'pulse' | 'live' | 'message' | 'profile' | 'bell' | 'plus' | 'sparkles' | 'users'
+type Tab = 'Inicio' | 'Buscar' | 'Pulses' | 'Lives' | 'Mensajes' | 'Perfil'
+
+const tabs: readonly { id: Tab; icon: IconName }[] = [
+  { id: 'Inicio', icon: 'home' },
+  { id: 'Buscar', icon: 'search' },
+  { id: 'Pulses', icon: 'pulse' },
+  { id: 'Lives', icon: 'live' },
+  { id: 'Mensajes', icon: 'message' },
+  { id: 'Perfil', icon: 'profile' },
+]
+
+const emptyStates: Record<Exclude<Tab, 'Buscar' | 'Perfil'>, { icon: IconName; title: string; description: string }> = {
+  Inicio: { icon: 'sparkles', title: 'Todavía no hay publicaciones', description: 'Seguí usuarios para llenar tu feed.' },
+  Pulses: { icon: 'pulse', title: 'Todavía no hay pulses', description: 'Sé el primero en subir un video corto vertical.' },
+  Lives: { icon: 'live', title: 'No hay directos en vivo', description: 'Cuando un creador comience a transmitir, aparecerá aquí.' },
+  Mensajes: { icon: 'message', title: 'No tienes conversaciones', description: 'Empezá una nueva conversación con el botón +.' },
 }
 
-const tabs = [
-  { id: 'Inicio', icon: '⌂' },
-  { id: 'Pulse', icon: '▶' },
-  { id: 'Grid Studio', icon: '●' },
-  { id: 'Gaming', icon: '◈' },
-  { id: 'Wallet', icon: '◇' },
-]
-
-const initialPosts: Post[] = [
-  { id: 1, name: 'Alex Grid', handle: '@alexgrid', text: 'Bienvenidos a The Grid. Un nuevo espacio para crear, compartir y transmitir sin salir de tu universo.', time: 'Ahora', likes: 128, comments: 18, verified: true },
-  { id: 2, name: 'Mica Stream', handle: '@mica', text: 'Grid Studio listo. Esta noche probamos el nuevo setup de streaming en vivo. ¿Quién se conecta?', time: '12 min', likes: 64, comments: 9, verified: true },
-  { id: 3, name: 'Nexus Gaming', handle: '@nexus', text: 'Nuevo Drop desbloqueado: Neon Runner. El evento empieza en 42 minutos.', time: '31 min', likes: 42, comments: 6 },
-]
-
-const pulses = [
-  { title: 'Night Drive', creator: '@mica', views: '18.4K', tag: 'MÚSICA' },
-  { title: 'Ranked Rush', creator: '@nexus', views: '9.8K', tag: 'GAMING' },
-  { title: 'Creator Lab', creator: '@alexgrid', views: '7.2K', tag: 'CREATOR' },
-  { title: 'After Hours', creator: '@luna', views: '5.6K', tag: 'LIVE' },
-]
-
-function Icon({ children }: { children: React.ReactNode }) {
-  return <span className="iconGlyph" aria-hidden="true">{children}</span>
+function Icon({ name, size = 40 }: { name: IconName; size?: number }): ReactNode {
+  const common = { width: size, height: size, viewBox: '0 0 48 48', fill: 'none', 'aria-hidden': true } as const
+  switch (name) {
+    case 'home': return <svg {...common}><path d="m8 22 16-13 16 13v17a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3V22Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/><path d="M19 42V28h10v14" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/></svg>
+    case 'search': return <svg {...common}><circle cx="21" cy="21" r="13" stroke="currentColor" strokeWidth="2.2"/><path d="m31 31 10 10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg>
+    case 'pulse': return <svg {...common}><path d="m27 5-16 21h12l-2 17 16-22H25l2-16Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/></svg>
+    case 'live': return <svg {...common}><circle cx="24" cy="24" r="4" fill="currentColor"/><path d="M16 17a10 10 0 0 0 0 14M32 17a10 10 0 0 1 0 14M11 12a17 17 0 0 0 0 24M37 12a17 17 0 0 1 0 24" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg>
+    case 'message': return <svg {...common}><path d="M8 10a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H20l-9 7v-7H12a4 4 0 0 1-4-4V10Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/></svg>
+    case 'profile': return <svg {...common}><circle cx="24" cy="16" r="7" stroke="currentColor" strokeWidth="2.2"/><path d="M11 41c1.5-7 5.8-11 13-11s11.5 4 13 11" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg>
+    case 'bell': return <svg {...common}><path d="M12 34h24c-3-3-4-6-4-12 0-6-3.2-10-8-10s-8 4-8 10c0 6-1 9-4 12Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/><path d="M19 39c.9 2 2.3 3 5 3s4.1-1 5-3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg>
+    case 'plus': return <svg {...common}><path d="M24 10v28M10 24h28" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg>
+    case 'sparkles': return <svg {...common}><path d="m24 7 4.5 12.5L41 24l-12.5 4.5L24 41l-4.5-12.5L7 24l12.5-4.5L24 7Z" stroke="currentColor" strokeWidth="2.1" strokeLinejoin="round"/><path d="m39 7 .9 2.1L42 10l-2.1.9L39 13l-.9-2.1L36 10l2.1-.9L39 7ZM10 35l.8 1.7 1.7.8-1.7.8L10 40l-.8-1.7-1.7-.8 1.7-.8L10 35Z" fill="currentColor"/></svg>
+    case 'users': return <svg {...common}><circle cx="21" cy="18" r="6" stroke="currentColor" strokeWidth="2.1"/><path d="M10 38c.8-6 4.5-9 11-9 2.8 0 5 .5 6.7 1.6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"/><circle cx="34" cy="28" r="4" stroke="currentColor" strokeWidth="2.1"/><path d="m36.5 31 4 4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"/></svg>
+  }
 }
 
-export default function Home() {
-  const [tab, setTab] = useState('Inicio')
-  const [posts, setPosts] = useState<Post[]>(initialPosts)
-  const [text, setText] = useState('')
+function Brand(): ReactNode {
+  return <div className="brand" aria-label="The Grid">
+    <div className="brandMark">
+      <svg viewBox="0 0 70 70" fill="none" aria-hidden="true">
+        <defs><linearGradient id="gridLogoGradient" x1="10" y1="60" x2="60" y2="8" gradientUnits="userSpaceOnUse"><stop stopColor="#a246ff"/><stop offset="1" stopColor="#38b9ff"/></linearGradient></defs>
+        <g stroke="url(#gridLogoGradient)" strokeWidth="3.2"><path d="M15 23 34 10l21 12-2 24-20 13-20-13z"/><path d="m15 23 18 16 22-17M34 10l-1 29m1 29V39m-21 7 21-7 20 7"/></g>
+        <circle cx="15" cy="23" r="4.2" fill="#a246ff"/><circle cx="34" cy="10" r="4.2" fill="#8c4aff"/><circle cx="55" cy="22" r="4.2" fill="#3dbaff"/><circle cx="53" cy="46" r="4.2" fill="#5ca5ff"/><circle cx="33" cy="59" r="4.2" fill="#9d48ff"/><circle cx="13" cy="46" r="4.2" fill="#a246ff"/>
+      </svg>
+      <span>'he grid'</span>
+    </div>
+    <strong>The Grid</strong>
+  </div>
+}
+
+function EmptyState({ icon, title, description }: { icon: IconName; title: string; description: string }): ReactNode {
+  return <section className="emptyState">
+    <div className="emptyIcon"><Icon name={icon} size={70} /></div>
+    <h2>{title}</h2>
+    <p>{description}</p>
+  </section>
+}
+
+export default function Home(): ReactNode {
+  const [tab, setTab] = useState<Tab>('Inicio')
   const [search, setSearch] = useState('')
-  const [notice, setNotice] = useState('')
-  const [showProfile, setShowProfile] = useState(false)
+  const [showComposer, setShowComposer] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [following, setFollowing] = useState(false)
-  const [live, setLive] = useState(false)
+  const [message, setMessage] = useState('')
 
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem('grid-posts')
-      if (saved) setPosts(JSON.parse(saved))
-    } catch {
-      // Preview remains usable when storage is unavailable.
+  const notify = (text: string): void => {
+    setMessage(text)
+    window.setTimeout(() => setMessage(''), 2200)
+  }
+
+  const navigate = (next: Tab): void => {
+    setTab(next)
+    setSearch('')
+  }
+
+  const renderPage = (): ReactNode => {
+    if (tab === 'Buscar') {
+      return <div className="page searchPage">
+        <h1>Buscar</h1>
+        <label className="searchInput">
+          <Icon name="search" size={42} />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar usuarios o hashtags" aria-label="Buscar usuarios o hashtags" />
+        </label>
+        <div className="searchTabs"><button className="active">Usuarios</button><button>Hashtags</button></div>
+        <EmptyState icon="users" title="Buscá creadores" description="Escribí un @username para encontrar personas." />
+      </div>
     }
-  }, [])
 
-  useEffect(() => {
-    try { window.localStorage.setItem('grid-posts', JSON.stringify(posts)) } catch {}
-  }, [posts])
+    if (tab === 'Perfil') {
+      return <div className="page profilePage">
+        <h1>Perfil</h1>
+        <div className="profileHero"><div className="profileAvatar">G</div><div><h2>Tu perfil</h2><p>@usuario</p></div><button onClick={() => notify('Edición de perfil disponible en la siguiente capa')}>Editar</button></div>
+        <div className="profileStats"><div><strong>0</strong><span>Publicaciones</span></div><div><strong>0</strong><span>Seguidores</span></div><div><strong>0</strong><span>Siguiendo</span></div></div>
+      </div>
+    }
 
-  const filteredPosts = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return posts
-    return posts.filter((post) => `${post.name} ${post.handle} ${post.text}`.toLowerCase().includes(q))
-  }, [posts, search])
-
-  const publish = () => {
-    const value = text.trim()
-    if (!value) return
-    setPosts([{ id: Date.now(), name: 'Tú', handle: '@usuario', text: value, time: 'Ahora', likes: 0, comments: 0 }, ...posts])
-    setText('')
-    setNotice('Publicación compartida en tu feed')
-    window.setTimeout(() => setNotice(''), 2400)
+    const state = emptyStates[tab]
+    return <div className={`page ${tab.toLowerCase()}`}>
+      <div className="pageTitleRow"><h1>{tab}</h1>{(tab === 'Inicio' || tab === 'Mensajes') && <button className="addButton" onClick={() => setShowComposer(true)} aria-label={tab === 'Inicio' ? 'Crear publicación' : 'Nueva conversación'}><Icon name="plus" size={55} /></button>}</div>
+      {tab === 'Inicio' && <div className="storyRow"><button className="story" onClick={() => setShowComposer(true)}><span className="storyRing"><Icon name="plus" size={52} /></span><span>Tu story</span></button></div>}
+      <EmptyState {...state} />
+    </div>
   }
 
-  const toggleLike = (id: number) => {
-    setPosts(posts.map((post) => post.id === id ? { ...post, liked: !post.liked, likes: post.likes + (post.liked ? -1 : 1) } : post))
-  }
+  return <main className="app">
+    <header className="topHeader">
+      <Brand />
+      <button className="notificationButton" onClick={() => setShowNotifications(true)} aria-label="Notificaciones"><Icon name="bell" size={50} /></button>
+    </header>
 
-  const action = (message: string) => {
-    setNotice(message)
-    window.setTimeout(() => setNotice(''), 2200)
-  }
+    <div className="content">{renderPage()}</div>
 
-  return (
-    <main className="appShell">
-      <aside className="sidebar">
-        <div className="brand" onClick={() => setTab('Inicio')} role="button" tabIndex={0}>
-          <span className="brandMark">G</span>
-          <span>THE <b>GRID</b></span>
-        </div>
+    <nav className="bottomNav" aria-label="Navegación principal">
+      {tabs.map((item) => <button key={item.id} className={tab === item.id ? 'active' : ''} onClick={() => navigate(item.id)}><Icon name={item.icon} size={54} /><span>{item.id}</span></button>)}
+    </nav>
 
-        <nav className="mainNav" aria-label="Navegación principal">
-          {tabs.map((item) => (
-            <button key={item.id} className={tab === item.id ? 'navItem active' : 'navItem'} onClick={() => setTab(item.id)}>
-              <Icon>{item.icon}</Icon><span>{item.id}</span>
-            </button>
-          ))}
-        </nav>
+    {showComposer && <div className="overlay" role="presentation" onClick={() => setShowComposer(false)}><section className="actionSheet" role="dialog" aria-modal="true" aria-label="Crear" onClick={(event) => event.stopPropagation()}><span className="sheetHandle"/><h2>{tab === 'Mensajes' ? 'Nueva conversación' : 'Crear'}</h2><button onClick={() => { setShowComposer(false); notify('Compositor de publicación abierto') }}>Publicación</button><button onClick={() => { setShowComposer(false); notify('Selector de Pulse abierto') }}>Pulse</button><button onClick={() => { setShowComposer(false); notify('Grid Studio listo para transmitir') }}>Transmitir en vivo</button></section></div>}
 
-        <button className="primaryButton composeButton" onClick={() => { setTab('Inicio'); window.setTimeout(() => document.getElementById('composer')?.focus(), 0) }}>
-          <span>＋</span> Crear publicación
-        </button>
+    {showNotifications && <div className="overlay" role="presentation" onClick={() => setShowNotifications(false)}><section className="notificationSheet" role="dialog" aria-modal="true" aria-label="Notificaciones" onClick={(event) => event.stopPropagation()}><span className="sheetHandle"/><div className="sheetHeader"><h2>Notificaciones</h2><button onClick={() => setShowNotifications(false)}>Cerrar</button></div><EmptyState icon="bell" title="Sin notificaciones" description="Tus likes, comentarios, seguidores y menciones aparecerán aquí."/><button className="filterButton" onClick={() => notify('Filtros abiertos')}>Filtros</button></section></div>}
 
-        <div className="sidebarFooter">
-          <button className="profileMini" onClick={() => setShowProfile(true)}>
-            <span className="avatar avatarMe">G</span>
-            <span><b>Tu perfil</b><small>@usuario</small></span>
-            <span className="dots">•••</span>
-          </button>
-        </div>
-      </aside>
-
-      <section className="feedColumn">
-        <header className="topbar">
-          <div className="pageTitle"><span className="eyebrow">THE GRID</span><h1>{tab}</h1></div>
-          <div className="topActions">
-            <label className="searchBox"><Icon>⌕</Icon><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en The Grid" aria-label="Buscar" /></label>
-            <button className="circleButton" onClick={() => setShowNotifications(true)} aria-label="Notificaciones">♢<span className="notificationDot" /></button>
-            <button className="avatar avatarMe topAvatar" onClick={() => setShowProfile(true)} aria-label="Abrir perfil">G</button>
-          </div>
-        </header>
-
-        {tab === 'Inicio' && (
-          <>
-            <div className="heroStrip">
-              <div><span className="livePill"><i /> ONLINE</span><h2>Tu red.<br /><em>Tu universo.</em></h2><p>Comparte ideas, descubre Pulse y entra en directo con The Grid.</p></div>
-              <div className="heroOrb"><span>G</span></div>
-            </div>
-
-            <div className="composerCard">
-              <div className="avatar avatarMe">G</div>
-              <div className="composerMain">
-                <textarea id="composer" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') publish() }} placeholder="¿Qué está pasando en tu mundo?" />
-                <div className="composerTools">
-                  <div className="toolLinks"><button onClick={() => action('Selector de imagen listo')}>▧ Foto</button><button onClick={() => action('Selector de video listo')}>▶ Video</button><button onClick={() => action('Encuesta creada en modo demo')}>◒ Encuesta</button></div>
-                  <button className="primaryButton publishButton" onClick={publish}>Publicar</button>
-                </div>
-              </div>
-            </div>
-
-            <div className="sectionHeading"><div><span className="eyebrow">LIVE FEED</span><h2>Para ti</h2></div><button onClick={() => action('Feed actualizado')}>Actualizar ↻</button></div>
-            <div className="postList">
-              {filteredPosts.map((post) => (
-                <article className="postCard" key={post.id}>
-                  <div className="postAvatar avatar">{post.name[0]}</div>
-                  <div className="postBody">
-                    <div className="postMeta"><div><b>{post.name}</b>{post.verified && <span className="verified">✓</span>} <span className="muted">{post.handle} · {post.time}</span></div><button className="moreButton">•••</button></div>
-                    <p>{post.text}</p>
-                    <div className="postActions">
-                      <button className={post.liked ? 'liked' : ''} onClick={() => toggleLike(post.id)}><Icon>{post.liked ? '♥' : '♡'}</Icon>{post.likes}</button>
-                      <button onClick={() => action('Los comentarios estarán disponibles en la siguiente capa')}>◌ {post.comments}</button>
-                      <button onClick={() => action('Publicación preparada para compartir')}>↗ Compartir</button>
-                      <button onClick={() => action('Guardado en tu colección')}>◇</button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </>
-        )}
-
-        {tab === 'Pulse' && <div className="modulePage"><div className="moduleHero"><span className="eyebrow">SHORT VIDEO</span><h2>Pulse <em>in motion.</em></h2><p>Descubre clips verticales, creadores y momentos que están encendiendo The Grid.</p><button className="primaryButton" onClick={() => action('Reproducción de Pulse iniciada')}>▶ Explorar Pulse</button></div><div className="pulseGrid">{pulses.map((pulse, index) => <button className="pulseCard" key={pulse.title} onClick={() => action(`Reproduciendo ${pulse.title}`)}><div className={`pulseVisual v${index + 1}`}><span>{pulse.tag}</span><b>▶</b></div><strong>{pulse.title}</strong><small>{pulse.creator} · {pulse.views} views</small></button>)}</div></div>}
-
-        {tab === 'Grid Studio' && <div className="modulePage"><div className="studioPanel"><div><span className="eyebrow">BROADCAST CONTROL</span><h2>Grid Studio</h2><p>Tu centro de emisión. Controla el estado del canal, prepara tu directo y monitoriza la audiencia.</p></div><div className={live ? 'streamPreview isLive' : 'streamPreview'}><span className="streamBadge">{live ? '● EN DIRECTO' : 'PREVIEW'}</span><div className="streamLogo">G</div><strong>{live ? 'The Grid Live' : 'Tu próxima transmisión'}</strong><small>{live ? '128 espectadores conectados' : 'Listo para emitir'}</small></div><button className="primaryButton studioButton" onClick={() => { setLive(!live); action(live ? 'Transmisión detenida' : 'Transmisión iniciada en modo demo') }}>{live ? '■ Detener transmisión' : '● Iniciar transmisión'}</button></div><div className="statsRow"><div><small>ESPECTADORES</small><b>{live ? '128' : '—'}</b></div><div><small>CALIDAD</small><b>1080p</b></div><div><small>LATENCIA</small><b>Low</b></div><div><small>ESTADO</small><b className="green">● Ready</b></div></div></div>}
-
-        {tab === 'Gaming' && <div className="modulePage"><div className="gamingHeader"><span className="eyebrow">GAMING NEXUS</span><h2>Juega. Mira. <em>Gana.</em></h2><p>Tu actividad, tus drops y tus comunidades gaming en un solo lugar.</p></div><div className="gameCards"><div className="gameCard featuredGame"><span>DROP EVENT</span><h3>NEON<br />RUNNER</h3><p>Rare drop · 42 min</p><button className="primaryButton" onClick={() => action('Te has unido al evento Neon Runner')}>Unirme al evento</button></div><div className="gameCard"><span>NOW PLAYING</span><h3>RANKED<br />RUSH</h3><p>12 friends online</p><button onClick={() => action('Rich Presence conectado')}>Ver actividad</button></div><div className="gameCard"><span>YOUR LEVEL</span><h3>LEVEL<br />27</h3><p>+1,240 XP this week</p><button onClick={() => action('Perfil gaming abierto')}>Ver progreso</button></div></div></div>}
-
-        {tab === 'Wallet' && <div className="modulePage"><div className="walletHero"><div><span className="eyebrow">CLOUD WALLET</span><h2>Tu economía, <em>en un lugar.</em></h2><p>Visualiza ingresos de creator, suscripciones y recompensas.</p></div><div className="balance"><small>BALANCE DISPONIBLE</small><strong>$ 2,840.50</strong><span>↑ 18.4% este mes</span></div></div><div className="walletGrid"><div className="walletCard"><small>ESTE MES</small><b>$ 1,284.20</b><span>Ingresos de creator</span><div className="miniChart"><i/><i/><i/><i/><i/><i/><i/><i/></div></div><div className="walletCard"><small>SUBSCRIPCIONES</small><b>348</b><span>miembros activos</span><button onClick={() => action('Panel de suscripciones abierto')}>Gestionar →</button></div><div className="walletCard"><small>PRÓXIMO PAGO</small><b>18 SEP</b><span>Transferencia estimada</span><button onClick={() => action('Detalle de payout abierto')}>Ver detalle →</button></div></div></div>}
-      </section>
-
-      <aside className="rightRail">
-        <div className="railCard profileCard"><div className="cover" /><div className="profileContent"><div className="avatar avatarLarge avatarMe">G</div><div className="profileName"><h3>Tu perfil</h3><span>@usuario</span></div><button className={following ? 'followButton following' : 'followButton'} onClick={() => setFollowing(!following)}>{following ? 'Siguiendo' : 'Seguir'}</button><p>Explorando The Grid · Creator preview</p><div className="profileStats"><span><b>1.2K</b> seguidores</span><span><b>284</b> siguiendo</span></div></div></div>
-        <div className="railCard"><div className="railTitle"><span><i className="greenDot"/> Tendencias</span><button onClick={() => action('Tendencias actualizadas')}>↻</button></div><div className="trend"><small>01 · GAMING</small><b>#NeonRunner</b><span>2,840 posts</span></div><div className="trend"><small>02 · CREATOR</small><b>#GridStudio</b><span>1,420 posts</span></div><div className="trend"><small>03 · PULSE</small><b>#NightDrive</b><span>982 posts</span></div></div>
-        <div className="railCard liveCard"><div className="railTitle"><span><i className="liveDot"/> En vivo ahora</span><b>24</b></div><div className="livePerson"><span className="avatar small">M</span><span><b>Mica Stream</b><small>Late Night Session</small></span><button onClick={() => { setTab('Grid Studio'); action('Entrando a la preview del directo') }}>Ver</button></div><div className="livePerson"><span className="avatar small altAvatar">N</span><span><b>Nexus Gaming</b><small>Ranked Rush</small></span><button onClick={() => action('Abriendo directo de gaming')}>Ver</button></div></div>
-        <div className="railFooter">The Grid · Preview 0.9 · <button onClick={() => action('Centro de privacidad abierto')}>Privacidad</button> · <button onClick={() => action('Ayuda abierta')}>Ayuda</button></div>
-      </aside>
-
-      {notice && <div className="toast">✓ {notice}</div>}
-
-      {showNotifications && <div className="modalBackdrop" onClick={() => setShowNotifications(false)}><div className="modal" onClick={(e) => e.stopPropagation()}><div className="modalHeader"><div><span className="eyebrow">ACTIVIDAD</span><h2>Notificaciones</h2></div><button className="closeButton" onClick={() => setShowNotifications(false)}>×</button></div><div className="notification"><span className="avatar small">A</span><p><b>Alex Grid</b> empezó a seguirte.<small>Hace 4 min</small></p></div><div className="notification"><span className="avatar small altAvatar">M</span><p><b>Mica Stream</b> publicó en Grid Studio.<small>Hace 12 min</small></p></div><div className="notification"><span className="avatar small">N</span><p><b>Nexus Gaming</b> desbloqueó un Drop.<small>Hace 31 min</small></p></div></div></div>}
-
-      {showProfile && <div className="modalBackdrop" onClick={() => setShowProfile(false)}><div className="modal profileModal" onClick={(e) => e.stopPropagation()}><div className="modalHeader"><div><span className="eyebrow">CUENTA</span><h2>Tu perfil</h2></div><button className="closeButton" onClick={() => setShowProfile(false)}>×</button></div><div className="profileEdit"><div className="avatar avatarLarge avatarMe">G</div><h3>Tu perfil</h3><span>@usuario</span><p>Este perfil es parte del preview funcional de The Grid. Los cambios persistirán localmente en este navegador.</p><button className="primaryButton" onClick={() => action('Perfil guardado en modo demo')}>Guardar cambios</button></div></div></div>}
-    </main>
-  )
+    {message && <div className="toast" role="status">{message}</div>}
+  </main>
 }
